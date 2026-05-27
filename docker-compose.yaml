@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+#  volumes: Mounts a named volume to persist data. Without this, every time the container stops, all the data is lost.
+#  The path /var/lib/postgresql is where Postgres stores its data files inside the container.
+  product-db:
+    image: postgres
+    container_name: product-db
+#    ports:
+#      - "5432:5432"
+    environment:
+      POSTGRES_DB: product-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    volumes:
+      - product-db-data:/var/lib/postgresql
+    networks:
+      - myNetwork
+
+  product-service:
+    image: noviceanemone/service-product:0.0.1
+    container_name: product-service
+    ports:
+      - "8080:8080"
+    networks:
+      - myNetwork
+    depends_on:
+      - product-db
+#depends_on tells Compose to start product-db before product-service. Note: it only waits for the container to start,
+#  not for Postgres to be fully ready — which is why Spring Boot has retry logic on startup.
+
+
+volumes:
+  product-db-data:
+#  Both services are on the same network. This is what allows product-service to reach product-db by name.
+#  Without a shared network, the containers are isolated and can't talk to each other.
+networks:
+  myNetwork:
+
+#  volumes,networks declare the named volume and network at the top level so Docker knows to create them.
+#  If you don't declare them here, Compose will throw an error.
